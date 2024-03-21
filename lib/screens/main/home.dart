@@ -1,13 +1,67 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For date formatting
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shoof24/utils/colors.dart';
 
 class home extends StatelessWidget {
+  // Since SharedPreferences is async, we use a method to get user data
+  Future<Map<String, dynamic>?> getUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? userDataString = prefs.getString('userData');
+    if (userDataString != null) {
+      return json.decode(userDataString) as Map<String, dynamic>;
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Main Page'),
+        backgroundColor: AppColors.backgroundColor,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            // Logo placeholder - replace with your actual logo widget if available
+            const Placeholder(
+              color: AppColors.backgroundColor,
+            ),
+            SizedBox(width: 16), // Spacer
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  DateFormat('EEE, MMM d, yyyy').format(DateTime.now()),
+                  style: TextStyle(color: AppColors.textColor, fontSize: 15),
+                ),
+                FutureBuilder<Map<String, dynamic>?>(
+                  future: getUserData(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return CircularProgressIndicator(
+                          color: AppColors.textColor);
+                    } else if (snapshot.hasError || !snapshot.hasData) {
+                      return Text('Error loading data',
+                          style: TextStyle(
+                              color: AppColors.textColor, fontSize: 15));
+                    } else {
+                      final userData = snapshot.data;
+                      // Assuming 'exp_date' is the key where expiration date is stored. Adjust if necessary.
+                      final expirationDate = userData?['exp_date'] ?? 'Unknown';
+                      return Text(
+                        'Expiration Date: $expirationDate',
+                        style:
+                            TextStyle(color: AppColors.textColor, fontSize: 15),
+                      );
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
       body: Stack(
         children: [
@@ -15,52 +69,7 @@ class home extends StatelessWidget {
           Container(
             color: Colors.black, // Dark background color
           ),
-          // Top bar
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              padding: EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Logo (replace the placeholder with your logo widget)
-                  CustomBox(
-                    width: 100,
-                    height: 50,
-                    color: Colors.white,
-                  ),
-                  // Day and time
-                  Text(
-                    DateFormat('EEE, MMM d, yyyy HH:mm').format(DateTime.now()),
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  // Expiration date (replace 'getUserInfo' with your actual method)
-                  FutureBuilder<String>(
-                    future: getUserInfo(), // Fetch user info asynchronously
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        // While data is being fetched, show a loading indicator
-                        return CircularProgressIndicator(color: Colors.white);
-                      } else if (snapshot.hasError) {
-                        // If there's an error fetching data, display an error message
-                        return Text('Error: ${snapshot.error}',
-                            style: TextStyle(color: Colors.white));
-                      } else {
-                        // If data is fetched successfully, display expiration date
-                        final expirationDate = snapshot.data;
-                        return Text(
-                          'Expiration Date: $expirationDate',
-                          style: TextStyle(color: Colors.white),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
+
           // Four button boxes in the middle
           Positioned(
             top: 100, // Adjust the position as needed
@@ -125,28 +134,6 @@ class home extends StatelessWidget {
           Text(text), // Text
         ],
       ),
-    );
-  }
-}
-
-class CustomBox extends StatelessWidget {
-  final double width;
-  final double height;
-  final Color color;
-
-  const CustomBox({
-    Key? key,
-    required this.width,
-    required this.height,
-    required this.color,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      color: color,
     );
   }
 }

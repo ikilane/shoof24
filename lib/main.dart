@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shoof24/screens/auth/login.dart';
 import 'package:shoof24/screens/main/home.dart'; // Import the home page
@@ -10,26 +11,31 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'IPTV App',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: FutureBuilder<bool>(
-        future: isLoggedIn(), // Check if user is already logged in
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            // While checking user login state, show a loading indicator
-            return Scaffold(body: Center(child: CircularProgressIndicator()));
-          } else if (snapshot.hasError) {
-            // If there's an error checking login state, display an error message
-            return Scaffold(
-                body: Center(child: Text('Error: ${snapshot.error}')));
-          } else {
-            // If user is logged in, show home page; otherwise, show login page
-            return snapshot.data! ? home() : LoginPage();
-          }
-        },
+    return Shortcuts(
+      shortcuts: <LogicalKeySet, Intent>{
+        LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
+      },
+      child: MaterialApp(
+        title: 'IPTV App',
+        theme: ThemeData(
+          primarySwatch: Colors.blue,
+        ),
+        home: FutureBuilder<bool>(
+          future: isLoggedIn(), // Check if user is already logged in
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              // While checking user login state, show a loading indicator
+              return Scaffold(body: Center(child: CircularProgressIndicator()));
+            } else if (snapshot.hasError) {
+              // If there's an error checking login state, display an error message
+              return Scaffold(
+                  body: Center(child: Text('Error: ${snapshot.error}')));
+            } else {
+              // If user is logged in, show home page; otherwise, show login page
+              return snapshot.data! ? home() : LoginPage();
+            }
+          },
+        ),
       ),
     );
   }

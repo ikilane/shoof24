@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shoof24/screens/main/home.dart';
 import 'package:shoof24/utils/colors.dart';
@@ -26,6 +27,18 @@ class _LoginPageState extends State<LoginPage> {
     super.initState();
     usernameFocusNode = FocusNode();
     passwordFocusNode = FocusNode();
+    usernameFocusNode.addListener(() {
+      if (usernameFocusNode.hasFocus) {
+        // Show the keyboard when the username field gets focus
+        FocusScope.of(context).requestFocus(usernameFocusNode);
+      }
+    });
+    passwordFocusNode.addListener(() {
+      if (passwordFocusNode.hasFocus) {
+        // Show the keyboard when the password field gets focus
+        FocusScope.of(context).requestFocus(passwordFocusNode);
+      }
+    });
   }
 
   @override
@@ -71,30 +84,26 @@ class _LoginPageState extends State<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         prefs.setString('username', usernameController.text);
         prefs.setString('password', passwordController.text);
+
+        // Assuming 'exp_date' is a Unix timestamp. Adjust if it's in a different format.
+        int expTimestamp = responseData['user_info']['exp_date'];
+        // Convert Unix timestamp to DateTime
+        DateTime expDate =
+            DateTime.fromMillisecondsSinceEpoch(expTimestamp * 1000);
+        // Format DateTime to a readable string format, e.g., "2023-01-01"
+        String formattedExpDate = intl.DateFormat('yyyy-MM-dd').format(expDate);
+
+        // Modify the user_info map to replace the timestamp with the formatted date string
+        responseData['user_info']['exp_date'] = formattedExpDate;
+
         prefs.setString('userData', json.encode(responseData['user_info']));
 
         // Navigate to the home page
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => home(),
+            builder: (context) => home(), // Ensure this is correctly referenced
           ),
-        );
-      } else {
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Error'),
-              content: Text('Invalid username or password. Please try again.'),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('OK'),
-                ),
-              ],
-            );
-          },
         );
       }
     } else {
@@ -162,6 +171,7 @@ class _LoginPageState extends State<LoginPage> {
                       controller: usernameController,
                       hintText: '059* *** ***',
                       label: 'إسم المستخدم',
+                      focusNode: usernameFocusNode,
                     ),
                     SizedBox(height: 40),
                     CustomInputField(
@@ -169,6 +179,7 @@ class _LoginPageState extends State<LoginPage> {
                       hintText: '*******',
                       label: 'كلمة المرور',
                       obscureText: true,
+                      focusNode: passwordFocusNode,
                     ),
                     SizedBox(height: 20),
                     CustomButton(
