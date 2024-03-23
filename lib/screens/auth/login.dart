@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -55,12 +57,12 @@ class _LoginPageState extends State<LoginPage> {
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Error'),
-            content: Text('Username and password are required.'),
+            title: const Text('Error'),
+            content: const Text('Username and password are required.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );
@@ -85,39 +87,80 @@ class _LoginPageState extends State<LoginPage> {
         prefs.setString('username', usernameController.text);
         prefs.setString('password', passwordController.text);
 
-        // Assuming 'exp_date' is a Unix timestamp. Adjust if it's in a different format.
-        int expTimestamp = responseData['user_info']['exp_date'];
-        // Convert Unix timestamp to DateTime
-        DateTime expDate =
-            DateTime.fromMillisecondsSinceEpoch(expTimestamp * 1000);
-        // Format DateTime to a readable string format, e.g., "2023-01-01"
-        String formattedExpDate = intl.DateFormat('yyyy-MM-dd').format(expDate);
+        // Parse expiration date as int, assuming it's stored as a Unix timestamp
+        int? expTimestamp =
+            int.tryParse(responseData['user_info']['exp_date'] ?? '');
+        if (expTimestamp != null) {
+          // Convert Unix timestamp to DateTime
+          DateTime expDate =
+              DateTime.fromMillisecondsSinceEpoch(expTimestamp * 1000);
+          // Format DateTime to a readable string format, e.g., "2023-01-01"
+          String formattedExpDate =
+              intl.DateFormat('yyyy-MM-dd').format(expDate);
 
-        // Modify the user_info map to replace the timestamp with the formatted date string
-        responseData['user_info']['exp_date'] = formattedExpDate;
+          // Modify the user_info map to replace the timestamp with the formatted date string
+          responseData['user_info']['exp_date'] = formattedExpDate;
 
-        prefs.setString('userData', json.encode(responseData['user_info']));
+          prefs.setString('userData', json.encode(responseData['user_info']));
 
-        // Navigate to the home page
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => home(), // Ensure this is correctly referenced
-          ),
+          // Navigate to the home page
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  home(), // Ensure this is correctly referenced
+            ),
+          );
+        } else {
+          // Display error message for invalid expiration date format
+          showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: const Text('Error'),
+                content: const Text('Invalid expiration date format.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('OK'),
+                  ),
+                ],
+              );
+            },
+          );
+        }
+      } else {
+        // Display error message for authentication failure
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Error'),
+              content:
+                  const Text('Invalid username or password. Please try again.'),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('OK'),
+                ),
+              ],
+            );
+          },
         );
       }
     } else {
+      // Display error message for HTTP request failure
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Error'),
-            content: Text(
+            title: const Text('Error'),
+            content: const Text(
                 'Failed to connect to the server. Please try again later.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
+                child: const Text('OK'),
               ),
             ],
           );
@@ -142,7 +185,7 @@ class _LoginPageState extends State<LoginPage> {
             bottom: 0,
             child: Container(
               width: MediaQuery.of(context).size.width * 0.4,
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Directionality(
                 textDirection: TextDirection.rtl,
                 child: Column(
@@ -173,7 +216,7 @@ class _LoginPageState extends State<LoginPage> {
                       label: 'إسم المستخدم',
                       focusNode: usernameFocusNode,
                     ),
-                    SizedBox(height: 40),
+                    const SizedBox(height: 40),
                     CustomInputField(
                       controller: passwordController,
                       hintText: '*******',
@@ -181,7 +224,7 @@ class _LoginPageState extends State<LoginPage> {
                       obscureText: true,
                       focusNode: passwordFocusNode,
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     CustomButton(
                       text: 'دخول',
                       onPressed: isLoading ? null : login,
@@ -227,7 +270,7 @@ class _LoginPageState extends State<LoginPage> {
                           height: 200,
                           child: Image.asset('assets/images/logo.png'),
                         ),
-                        SizedBox(height: 20),
+                        const SizedBox(height: 20),
                       ],
                     ),
                   ),

@@ -15,26 +15,31 @@ class MyApp extends StatelessWidget {
       shortcuts: <LogicalKeySet, Intent>{
         LogicalKeySet(LogicalKeyboardKey.select): const ActivateIntent(),
       },
-      child: MaterialApp(
-        title: 'IPTV App',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-        home: FutureBuilder<bool>(
-          future: isLoggedIn(), // Check if user is already logged in
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              // While checking user login state, show a loading indicator
-              return Scaffold(body: Center(child: CircularProgressIndicator()));
-            } else if (snapshot.hasError) {
-              // If there's an error checking login state, display an error message
-              return Scaffold(
-                  body: Center(child: Text('Error: ${snapshot.error}')));
-            } else {
-              // If user is logged in, show home page; otherwise, show login page
-              return snapshot.data! ? home() : LoginPage();
-            }
-          },
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: MaterialApp(
+          title: 'Shoof | شوف',
+          debugShowCheckedModeBanner: false,
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          home: FutureBuilder<bool>(
+            future: isLoggedIn(), // Check if user is already logged in
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                // While checking user login state, show a loading indicator
+                return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()));
+              } else if (snapshot.hasError) {
+                // If there's an error checking login state, display an error message
+                return Scaffold(
+                    body: Center(child: Text('Error: ${snapshot.error}')));
+              } else {
+                // If user is logged in, show home page; otherwise, show login page
+                return snapshot.data! ? home() : LoginPage();
+              }
+            },
+          ),
         ),
       ),
     );
