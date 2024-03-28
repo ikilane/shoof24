@@ -4,7 +4,7 @@ import 'package:shoof24/utils/colors.dart';
 
 class customHomeCards extends StatefulWidget {
   final String text;
-  final String supText;
+  final int supText;
   final IconData icon;
   final String backgroundImage;
   final VoidCallback? onPressed;
@@ -124,14 +124,21 @@ class _customHomeCardsState extends State<customHomeCards> {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      widget.supText,
-                      style: const TextStyle(
-                        fontFamily: 'cairo',
-                        color: AppColors.textColor,
-                        fontWeight: FontWeight.w100,
+                    if (widget.supText == 0)
+                    const SizedBox(
+                      width: 20, // Adjust the width
+                      height: 20, // Adjust the height
+                      child: CircularProgressIndicator(backgroundColor: AppColors.textColor,color: AppColors.primaryColor,strokeWidth: 2,)
+                    )
+                    else
+                      Text(
+                        '${widget.supText}',
+                        style: const TextStyle(
+                          fontFamily: 'cairo',
+                          color: AppColors.textColor,
+                          fontWeight: FontWeight.w100,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

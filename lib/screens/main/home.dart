@@ -1,26 +1,89 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shoof24/models/iptv.dart';
+import 'package:shoof24/models/user.dart';
+import 'package:shoof24/screens/auth/login.dart';
+import 'package:shoof24/screens/main/live.dart';
 import 'package:shoof24/utils/colors.dart';
 import 'package:shoof24/widgets/custom_home_cards.dart';
 import 'package:shoof24/widgets/custom_home_cards_horizontal.dart';
+import 'package:shoof24/api/api_service.dart'; // Import ApiService
 
-class home extends StatelessWidget {
-  // Since SharedPreferences is async, we use a method to get user data
-  Future<Map<String, dynamic>?> getUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? userDataString = prefs.getString('userData');
+class home extends StatefulWidget {
+  @override
+  _homeState createState() => _homeState();
+}
+
+class _homeState extends State<home> {
+  int liveChannelsCount = 0;
+  int movieChannelsCount = 0;
+  int seriesChannelsCount = 0;
+
+  List<ChannelLive> liveChannels = [];
+  List<ChannelLive> movieChannels = [];
+  List<ChannelLive> seriesChannels = [];
+
+  Future<UserInfo> getUserInfoFromPrefs() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? userDataString = prefs.getString('userData');
     if (userDataString != null) {
-      return json.decode(userDataString) as Map<String, dynamic>;
+      Map<String, dynamic> userDataMap = jsonDecode(userDataString);
+      UserInfo userInfo = UserInfo.fromJson(userDataMap);
+      return userInfo;
+    } else {
+      throw Exception('User data not found in shared preferences.');
     }
-    return null;
   }
 
-  void onBackPressed() {
-    // Navigator.of(context).pop();
+  @override
+  void initState() {
+    super.initState();
+    fetchChannelsCounts(); // Call method to fetch channels counts
+  }
+
+  // Method to fetch channels counts from ApiService
+  Future<void> fetchChannelsCounts() async {
+    bool countsFetched = false;
+
+    while (!countsFetched) {
+      try {
+        // Fetch live channels count
+        liveChannels = await ApiService.fetchLiveChannels();
+        if (liveChannels.isNotEmpty) {
+          setState(() {
+            liveChannelsCount = liveChannels.length;
+          });
+        }
+
+        // // Fetch movie channels count
+        // movieChannels = await ApiService.fetchMovieChannels();
+        // if (movieChannels.isNotEmpty) {
+        //   setState(() {
+        //     movieChannelsCount = movieChannels.length;
+        //   });
+        // }
+
+        // // Fetch series channels count
+        // seriesChannels =
+        //     await ApiService.fetchSeriesChannels();
+        // if (seriesChannels.isNotEmpty) {
+        //   setState(() {
+        //     seriesChannelsCount = seriesChannels.length;
+        //   });
+        // }
+
+        // Check if all counts are fetched and not equal to zero
+        if (liveChannels.isNotEmpty) {
+          countsFetched = true;
+        }
+      } catch (e) {
+        print('Error fetching channels counts: $e');
+        // Delay before retrying
+        await Future.delayed(const Duration(minutes: 1)); // Retry every 1 minute
+      }
+    }
   }
 
   @override
@@ -85,46 +148,80 @@ class home extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 20),
-                      const Row(
+                      Row(
                         children: [
                           Row(
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               customHomeCards(
                                 text: 'مـبـاشـر',
-                                supText: '1000',
+                                supText: liveChannelsCount, // Update subtext
                                 icon: Icons.live_tv_rounded,
                                 backgroundImage:
                                     'assets/images/homeCards/Live.png',
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    PageRouteBuilder(
+                                      pageBuilder: (context, animation,
+                                              secondaryAnimation) =>
+                                          live(liveChannels: liveChannels),
+                                      transitionsBuilder: (context, animation,
+                                          secondaryAnimation, child) {
+                                        var begin = const Offset(1.0, 0.0);
+                                        var end = Offset.zero;
+                                        var curve = Curves.easeInOut;
+
+                                        var tween = Tween(
+                                                begin: begin, end: end)
+                                            .chain(CurveTween(curve: curve));
+
+                                        return SlideTransition(
+                                          position: animation.drive(tween),
+                                          child: child,
+                                        );
+                                      },
+                                    ),
+                                  );
+                                },
                               ),
-                              SizedBox(width: 15),
+                              const SizedBox(width: 15),
                               customHomeCards(
                                 text: 'مسلسلات',
-                                supText: '1000',
+                                supText: movieChannelsCount, // Update subtext
                                 icon: Icons.movie_outlined,
                                 backgroundImage:
                                     'assets/images/homeCards/series.png',
                               ),
-                              SizedBox(width: 15),
+                              const SizedBox(width: 15),
                               customHomeCards(
                                 text: 'أفـــلام',
-                                supText: '1000',
+                                supText: seriesChannelsCount, // Update subtext
                                 icon: Icons.local_movies_outlined,
                                 backgroundImage:
                                     'assets/images/homeCards/movies.png',
                               ),
                             ],
                           ),
-                          SizedBox(width: 10),
+                          const SizedBox(width: 10),
                           Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              customHomeCardsHorizontal(
-                                text: 'مـبـاشـر',
-                                supText: '1000',
-                                icon: Icons.live_tv_rounded,
-                                backgroundImage:
-                                    'assets/images/homeCards/Live.png',
+                              const SizedBox(height: 168),
+                              FutureBuilder<UserInfo>(
+                                future: getUserInfoFromPrefs(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return const CircularProgressIndicator();
+                                  } else if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  } else {
+                                    UserInfo userInfo = snapshot.data!;
+                                    return CustomHomeCardsHorizontal(
+                                        userInfo: userInfo);
+                                  }
+                                },
                               ),
                             ],
                           ),
@@ -141,11 +238,7 @@ class home extends StatelessWidget {
     );
   }
 
-  // Method to fetch user info from shared preferences
-  Future<String> getUserInfo() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    // Replace 'expirationDateKey' with the actual key you used to store expiration date
-    String? expirationDate = prefs.getString('expirationDateKey');
-    return expirationDate ?? 'Unknown';
+  void onBackPressed() {
+    // Implement functionality for back button
   }
 }

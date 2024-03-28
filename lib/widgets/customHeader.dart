@@ -1,17 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart' as intl;
 
 class customHeader extends StatelessWidget implements PreferredSizeWidget {
   const customHeader({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // Get current date and time
-    DateTime now = DateTime.now();
-    // Format date and time using intl.DateFormat
-    String formattedDateTime =
-        intl.DateFormat('yyyy-MM-dd | HH:mm').format(now);
-
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -20,35 +13,32 @@ class customHeader extends StatelessWidget implements PreferredSizeWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Time and Date on the left
-            Text(
-              formattedDateTime,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 18.0,
-              ),
-            ),
-            // Logo and Search Icon on the right
             Row(
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                IconButton(
-                  onPressed: () {
-                    // Implement the search functionality here
-                  },
-                  icon: const Icon(
-                    Icons.search_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(width: 10),
                 Image.asset(
                   'assets/images/logo.png',
                   width: 80,
                   isAntiAlias: true,
                   filterQuality: FilterQuality.high,
                 ),
+                const SizedBox(width: 20),
+                Container(
+                  width: 1, // Divider width
+                  height: 20, // Divider height
+                  color: Colors.grey, // Divider color
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: onBackPressed, // Call local function
+                  icon: const Icon(
+                    Icons.search_rounded,
+                    color: Colors.white,
+                  ),
+                ),
               ],
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
@@ -58,4 +48,8 @@ class customHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Size get preferredSize =>
       const Size.fromHeight(60); // Adjust the height as needed
+}
+
+void onBackPressed() {
+  // Implement functionality for back button
 }
